@@ -14,13 +14,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	// メモリリークチェックコード
 
-	ゲームエンジン *エンジン= new ゲームエンジン();
+	gameEngine *engine= new gameEngine();
 
-	if (!エンジン) return -1;// メモリ確保に失敗
+	if (!engine) return -1;// メモリ確保に失敗
 
-	エンジン->実行();
+	engine->Run();
 
-	delete エンジン;
+	delete engine;
 
 	return 0;				// ソフトの終了 
 }

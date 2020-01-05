@@ -2,33 +2,33 @@
 #include "DxLib.h"
 
 // 前方宣言
-namespace エンジン {
-	class レンダリングサービス;
-	class エンティティサービス;
-	class 入力サービス;
-	class 弾丸サービス;
-	class システムサービス;
+namespace engine {
+	class renderingServices;
+	class EntityService;
+	class inputService;
+	class bulletService;
+	class systemService;
 }
 
 // クラス宣言
-class ゲームエンジン
+class gameEngine
 {
 private:
-	エンジン::エンティティサービス* エンティティサービス_;
-	エンジン::レンダリングサービス* レンダリングサービス_;
-	エンジン::入力サービス* 入力サービス_;
-	エンジン::弾丸サービス* 弾丸サービス_;
-	エンジン::システムサービス* システムサービス_;
+	engine::EntityService* EntityService_;
+	engine::renderingServices* renderingServices_;
+	engine::inputService* inputService_;
+	engine::bulletService* bulletService_;
+	engine::systemService* systemService_;
 
-	LONGLONG 前フレームのμ時刻_ = 0;
+	LONGLONG μtimeOfOldFrame_ = 0;
 
-	int 初期化();
-	int 更新();
-	int 片付け();
+	int Initialize();
+	int Update();
+	int Cleanup();
 
 public:
-	ゲームエンジン();
-	~ゲームエンジン();
+	gameEngine();
+	~gameEngine();
 
-	int 実行();
+	int Run();
 };

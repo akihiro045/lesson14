@@ -2,24 +2,24 @@
 #include "サービス・入力.h"
 #include "エンティティ.h"
 
-namespace エンジン
+namespace engine
 {
 
 	/////////////////////////////////////////////////////
 	// スプライトコンポーネント
 	/////////////////////////////////////////////////////
 
-	void スプライトコンポーネント::描画()
+	void spriteComponent::Draw()
 	{
-		float2 位置 = 親_.位置取得();
-		int x = static_cast<int>(位置.x + 0.5);
-		int y = static_cast<int>(位置.y + 0.5);
+		float2 position = parent_.getPosition();
+		int x = static_cast<int>(position.x + 0.5);
+		int y = static_cast<int>(position.y + 0.5);
 
-		if (位置は中心？_) {
-			システムサービス_->レンダラー取得().描画(リソースID_, x, y);
+		if (isThePositionCenter_) {
+			systemService_->getRenderer().Draw(resourceID_, x, y);
 		}
 		else {
-			システムサービス_->レンダラー取得().描画_左上(リソースID_, x, y);
+			systemService_->getRenderer().DrawUpperLeft(resourceID_, x, y);
 		}
 	}
 
@@ -27,131 +27,131 @@ namespace エンジン
 	// プレイヤー・エンティティ
 	/////////////////////////////////////////////////////
 
-	プレイヤー・エンティティ::プレイヤー・エンティティ()
+	playerEntity::playerEntity()
 	{
-		const レンダリングサービス::情報& レンダリング情報 = システムサービス_->レンダラー取得().情報取得();
-		位置設定(float2(
-			レンダリング情報.画面サイズ[0] / 2,
-			レンダリング情報.画面サイズ[1] * 4 / 5));
+		const renderingServices::infomation& renderingInfo = systemService_->getRenderer().getInfo();
+		positionSetting(float2(
+			renderingInfo.screenSize[0] / 2,
+			renderingInfo.screenSize[1] * 4 / 5));
 
-		スプライト_ = dynamic_cast<スプライトコンポーネント*>
-			(コンポーネント::コンポーネント生成(L"スプライトコンポーネント", *this));
-		スプライト_->リソース設定(RID_IMG_MAT04_01 + 2);
-		追加(スプライト_);
+		sprite_ = dynamic_cast<spriteComponent*>
+			(component::componentGeneration(L"スプライトコンポーネント", *this));
+		sprite_->resourceConf(RID_IMG_MAT04_01 + 2);
+		Add(sprite_);
 
-		入力_ = dynamic_cast<入力コンポーネント*>(コンポーネント::コンポーネント生成(L"入力コンポーネント", *this));
-		追加(入力_);
+		input_ = dynamic_cast<inputComponent*>(component::componentGeneration(L"入力コンポーネント", *this));
+		Add(input_);
 
-		弾丸_ = dynamic_cast<弾丸コンポーネント*>(コンポーネント::コンポーネント生成(L"弾丸コンポーネント", *this));
-		追加(弾丸_);
+		bullet_ = dynamic_cast<bulletComponent*>(component::componentGeneration(L"弾丸コンポーネント", *this));
+		Add(bullet_);
 	}
 
-	プレイヤー・エンティティ::~プレイヤー・エンティティ()
+	playerEntity::~playerEntity()
 	{
 
 	}
 
-	void プレイヤー・エンティティ::更新(float 経過時間)
+	void playerEntity::Update(float elapsedTime)
 	{
-		入力データ 入力 = 入力_->データ取得();
+		inputData input = input_->GetData();
 
 		// 移動
-		float2 位置 = 位置取得();
-		float 速度 = 100.0 * 経過時間;
+		float2 position = getPosition();
+		float speed = 100.0 * elapsedTime;
 
-		if (入力.生 & 入力サービス::マスク_上) {
-			位置.y -= 速度;
+		if (input.now & inputService::upMask) {
+			position.y -= speed;
 		}
-		if (入力.生 & 入力サービス::マスク_下) {
-			位置.y += 速度;
+		if (input.now & inputService::downMask) {
+			position.y += speed;
 		}
-		if (入力.生 & 入力サービス::マスク_左) {
-			位置.x -= 速度;
+		if (input.now & inputService::leftMask) {
+			position.x -= speed;
 		}
-		if (入力.生 & 入力サービス::マスク_右) {
-			位置.x += 速度;
+		if (input.now & inputService::rightMask) {
+			position.x += speed;
 		}
-		位置設定(位置);
+		positionSetting(position);
 
 		// 撃つ
-		if (入力.押し下げ & 入力サービス::マスク_ショット) {
-			弾丸_->追加(弾丸サービス::種類::自弾, this->位置_, this->位置_);// 速度にダミーで位置を入れた
+		if (input.pushDown & inputService::shootMask) {
+			bullet_->Add(bulletService::type::myBullet, this->position_, this->position_);// 速度にダミーで位置を入れた
 		}
 	}
 
-	void プレイヤー・エンティティ::描画()
+	void playerEntity::Draw()
 	{
-		スプライト_->描画();
+		sprite_->Draw();
 	}
 
 	/////////////////////////////////////////////////////
 	// ザコ１・エンティティ
 	/////////////////////////////////////////////////////
 
-	ザコ１・エンティティ::ザコ１・エンティティ()
-		:生存時間_(0.0f), 弾を撃つまでの時間_(5.0f), 残弾_(3)
+	mob1Entity::mob1Entity()
+		:survivalTime_(0.0f), shootTimeBullet_(5.0f), ammo_(3)
 	{
-		スプライト_ = dynamic_cast<スプライトコンポーネント*>
-			(コンポーネント::コンポーネント生成(L"スプライトコンポーネント", *this));
-		スプライト_->リソース設定(RID_ENEMY_S0);
-		追加(スプライト_);
+		sprite_ = dynamic_cast<spriteComponent*>
+			(component::componentGeneration(L"スプライトコンポーネント", *this));
+		sprite_->resourceConf(RID_ENEMY_S0);
+		Add(sprite_);
 
-		追加(dynamic_cast<弾丸コンポーネント*>(コンポーネント::コンポーネント生成(L"弾丸コンポーネント", *this)));
+		Add(dynamic_cast<bulletComponent*>(component::componentGeneration(L"弾丸コンポーネント", *this)));
 	}
 
-	void ザコ１・エンティティ::更新(float 経過時間)
+	void mob1Entity::Update(float elapsedTime)
 	{
-		生存時間_ += 経過時間;
-		弾を撃つまでの時間_ -= 経過時間;
+		survivalTime_ += elapsedTime;
+		shootTimeBullet_ -= elapsedTime;
 
-		float2 位置 = 位置取得();
+		float2 position = getPosition();
 		// 
 		// ここをAIで動かすのだ！！！！
 		// 
-		位置.y += 50.0f * 経過時間;// 全体スクロール
-		位置設定(位置);
+		position.y += 50.0f * elapsedTime;// 全体スクロール
+		positionSetting(position);
 
 		// 撃つ
-		if (弾を撃つまでの時間_ < 0.0f && 0 < 残弾_) {
-			残弾_--;
-			弾を撃つまでの時間_ = 3.0;
+		if (shootTimeBullet_ < 0.0f && 0 < ammo_) {
+			ammo_--;
+			shootTimeBullet_ = 3.0;
 
-			プレイヤー・エンティティ* プレイヤー = dynamic_cast<プレイヤー・エンティティ*>
-				(システムサービス_->エンティティ取得().最初のエンティティ検索(エンティティサービス::種類::プレイヤー));
-			float2 速度 = プレイヤー->位置取得() - 位置_;
-			速度 = 速度.正規化() * 100.0f;
-			弾丸コンポーネント* 弾丸 = dynamic_cast<弾丸コンポーネント*>(this->コンポーネント検索(L"弾丸コンポーネント"));
-			弾丸->追加(弾丸サービス::種類::敵弾, this->位置_, 速度);// 速度にダミーで位置を入れた
+			playerEntity* player = dynamic_cast<playerEntity*>
+				(systemService_->getEntity().searchOfFirstEntity(EntityService::type::player));
+			float2 speed = player->getPosition() - position_;
+			speed = speed.normalaize() * 100.0f;
+			bulletComponent* bullet = dynamic_cast<bulletComponent*>(this->searchComponent(L"弾丸コンポーネント"));
+			bullet->Add(bulletService::type::enemyBullet, this->position_, speed);// 速度にダミーで位置を入れた
 		}
 	}
 
-	void ザコ１・エンティティ::描画()
+	void mob1Entity::Draw()
 	{
-		スプライト_->描画();
+		sprite_->Draw();
 	}
 
 	/////////////////////////////////////////////////////
 	// ステージ１・エンティティ
 	/////////////////////////////////////////////////////
 
-	ステージ１・エンティティ::ステージ１・エンティティ()
+	stage1Entity::stage1Entity()
 	{
-		状態_ = 0;
-		時間_ = 0.0f;
-		状態での時間_ = 0.0f;
+		status_ = 0;
+		time_ = 0.0f;
+		timeInStatus_ = 0.0f;
 	}
 
-	void ステージ１・エンティティ::更新(float 経過時間)
+	void stage1Entity::Update(float elapsedTime)
 	{
-		状態での時間_ += 経過時間;
-		時間_ += 経過時間;
-		if (60.0f * 60.0f * 24.0f < 時間_) 時間_ = 60.0f * 60.0f * 24.0f;// 24時間で時間を止める(安全のため)
+		timeInStatus_ += elapsedTime;
+		time_ += elapsedTime;
+		if (60.0f * 60.0f * 24.0f < time_) time_ = 60.0f * 60.0f * 24.0f;// 24時間で時間を止める(安全のため)
 
 
-		switch (状態_) {
+		switch (status_) {
 		case 0:// 最初は何も起きない
-			if (3.0f < 状態での時間_) {
-				状態を進める();
+			if (3.0f < timeInStatus_) {
+				advanceStatus();
 			}
 			break;
 		case 1:// 定期的に敵グループを出す
@@ -164,17 +164,17 @@ namespace エンジン
 		case 8:
 		case 9:
 		case 10:
-			if (1.0f < 状態での時間_) {
+			if (1.0f < timeInStatus_) {
 				// 敵を出す
-				エンティティサービス& サービス = システムサービス_->エンティティ取得();
-				int 敵ハンドル = サービス.追加(エンティティサービス::種類::ザコ１);
-				ザコ１・エンティティ *敵 = dynamic_cast<ザコ１・エンティティ*>(サービス.エンティティ取得(敵ハンドル));
+				EntityService& service = systemService_->getEntity();
+				int enemyHandle = service.Add(EntityService::type::mob1);
+				mob1Entity *敵 = dynamic_cast<mob1Entity*>(service.getEntity(enemyHandle));
 
 				// 中央上空から出る
-				const レンダリングサービス::情報& レンダリング情報 = システムサービス_->レンダラー取得().情報取得();
-				敵->位置設定(float2(レンダリング情報.画面サイズ[0] / 2, -100.0f));
+				const renderingServices::infomation& renderingInfo = systemService_->getRenderer().getInfo();
+				敵->positionSetting(float2(renderingInfo.screenSize[0] / 2, -100.0f));
 
-				状態を進める();
+				advanceStatus();
 			}
 			break;
 		default:
@@ -184,4 +184,4 @@ namespace エンジン
 	}
 
 	
-}// namespace エンジン
+}// namespace engine

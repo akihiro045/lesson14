@@ -62,63 +62,63 @@
 
 #define RID_個数 (RID_MISSILE_BREAK+RID_MISSILE_BREAK_NUM)
 
-namespace エンジン {
+namespace engine {
 	
 	// 前方宣言
-	class リソース_ローダー;
+	class resourceLoader;
 
-	struct UVテーブル {
-		int 画像; // 画像
+	struct UVtable {
+		int img; // 画像
 		int u, v; // 左上
 		int w, h; // 幅高さ
 	};
 
-	class レンダリングサービス {
+	class renderingServices {
 	public:// 型情報
-		struct 情報 {
-			int 画面サイズ[2] = {0,0};
+		struct infomation {
+			int screenSize[2] = {0,0};
 		};
 
 	private:
-		リソース_ローダー *ローダー;
-		情報 情報_ = { {0,0} };
+		resourceLoader *loader;
+		infomation infomation_ = { {0,0} };
 	public:
 
-		レンダリングサービス();
-		~レンダリングサービス();
+		renderingServices();
+		~renderingServices();
 
-		int 初期化();
-		int 片付け();
+		int Initialize();
+		int Cleanup();
 
-		const 情報& 情報取得() const { return 情報_; }
-		int サイズ取得(unsigned int リソースID, int(&出力先)[2]) const ;
+		const infomation& getInfo() const { return infomation_; }
+		int GetSize(unsigned int resourceID, int(&output)[2]) const ;
 
-		void 描画_左上(unsigned int リソースID, int x, int y);
-		void 描画(unsigned int リソースID, int x, int y);
+		void DrawUpperLeft(unsigned int resourceID, int x, int y);
+		void Draw(unsigned int resourceID, int x, int y);
 	};
 
-	class リソース_ローダー
+	class resourceLoader
 	{
 	public:// friend宣言
-		friend レンダリングサービス;
+		friend renderingServices;
 
 	private:
-		static UVテーブル uvテーブル_[RID_個数];
-		static TCHAR *画像パス_[画像_枚数];
+		static UVtable UVtable_[RID_個数];
+		static TCHAR *imgPass_[画像_枚数];
 
-		int ハンドル配列_[画像_枚数];
+		int handleArray_[画像_枚数];
 
-		void ハンドル初期化();
+		void handloeInitialize();
 
-		static const UVテーブル &UVテーブル(int リソースID) { return uvテーブル_[リソースID]; }
-		int ハンドル所得(int 画像) { return ハンドル配列_[画像]; }
+		static const UVtable &UVtable(int resourceID) { return UVtable_[resourceID]; }
+		int GetHandle(int img) { return handleArray_[img]; }
 
 	public:
-		リソース_ローダー();
-		~リソース_ローダー();
+		resourceLoader();
+		~resourceLoader();
 
-		int 初期化();
-		int 片付け();
+		int Initialize();
+		int Cleanup();
 	};
 
 }

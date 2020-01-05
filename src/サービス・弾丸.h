@@ -2,68 +2,68 @@
 #include <vector>
 #include "共通.h"
 
-namespace エンジン {
+namespace engine {
 
-	class 弾丸サービス;
-	class レンダリングサービス;
+	class bulletService;
+	class renderingServices;
 
-	struct 弾丸データ{
-		float2 位置;
-		float2 速度;
-		bool 死んだ;
+	struct bulletData{
+		float2 position;
+		float2 speed;
+		bool death;
 	};
 
 	// 種類ごと確保
-	class 弾丸 {
+	class bullet {
 	public:
-		friend 弾丸サービス;
+		friend bulletService;
 	private:
-		unsigned int リソースID_ = 0;
-		float2 半サイズ_ = {0.0f, 0.0f};// 幅と高さの半分
-		unsigned int 最大数_ = 0;
-		unsigned int 個数_ = 0;
+		unsigned int resourceID_ = 0;
+		float2 halfSize_ = {0.0f, 0.0f};// 幅と高さの半分
+		unsigned int maximum_ = 0;
+		unsigned int bulletNum_ = 0;
 
-		弾丸データ* データ配列_ = nullptr;
+		bulletData* dataArray_ = nullptr;
 
-		static bool 画面外？(float2 位置, float2 サイズ, float2 画面サイズ);
+		static bool offScreen(float2 position, float2 サイズ, float2 screenSize);
 
 	public:
-		弾丸() {}
-		~弾丸() {}
+		bullet() {}
+		~bullet() {}
 
-		void 初期化(unsigned int 最大数, unsigned int リソースID, レンダリングサービス& レンダリングサービス);
-		void 片付け();
-		void リセット();// スタート時など弾を消す際の処理
+		void Initialize(unsigned int maximum, unsigned int resourceID, renderingServices& renderingServices);
+		void Cleanup();
+		void Reset();// スタート時など弾を消す際の処理
 
-		int 追加(float2 位置, float2 速度);
+		int Add(float2 position, float2 speed);
 
-		void 更新(float 経過時間, レンダリングサービス& レンダリングサービス);
-		void 更新後処理();
-		void 描画(レンダリングサービス& レンダリングサービス);
+		void Update(float elapsedTime, renderingServices& renderingServices);
+		void PostUpdateProcexxing();
+		void Draw(renderingServices& renderingServices);
 	};
 
 
-	class 弾丸サービス {
+	class bulletService {
 	public:// 定数宣言
-		enum 種類 {
-			自弾 = 0,
-			敵弾,
+		enum type {
+			myBullet = 0,
+			enemyBullet,
 
-			最大数,
+			maximum,
 		};
 
 	private:
-		弾丸 弾丸_[(int)(種類::最大数)];
-		レンダリングサービス &レンダリングサービス_;
+		bullet bullet_[(int)(type::maximum)];
+		renderingServices &renderingServices_;
 
 	public:
-		弾丸サービス(レンダリングサービス&);
-		~弾丸サービス();
+		bulletService(renderingServices&);
+		~bulletService();
 
-		int 追加(弾丸サービス::種類 種類, float2 位置, float2 速度);
-		void 更新(float 経過時間);
-		void 描画();
+		int Add(bulletService::type type, float2 position, float2 speed);
+		void Update(float elapsedTime);
+		void Draw();
 
 	};
 
-}// namespace エンジン
+}// namespace engine

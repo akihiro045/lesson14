@@ -6,18 +6,18 @@
 /// 設定情報 
 #define ルートパス L""
 
-namespace エンジン
+namespace engine
 {
 
 	/// 静的データ
-	TCHAR* リソース_ローダー::画像パス_[画像_枚数] = {
+	TCHAR* resourceLoader::imgPass_[画像_枚数] = {
 		ルートパス"img/mat04-01.png",
 		ルートパス"img/mat04-02.png",
 		ルートパス"img/mat04-03.png",
 		ルートパス"img/mat04-04.png",
 	};
 
-	UVテーブル リソース_ローダー::uvテーブル_[RID_個数] = {// エラーチェックのため要素数を明示的に指定
+	UVtable resourceLoader::UVtable_[RID_個数] = {// エラーチェックのため要素数を明示的に指定
 		 ///  RID_IMG_MAT04_01
 		 // RID_MY_SHIP: 自機
 		{IMG_MAT04_01, 0 + 32 * 0, 0, 32,32},
@@ -158,36 +158,36 @@ namespace エンジン
 
 	/// リソース_ローダー
 
-	リソース_ローダー::リソース_ローダー()
+	resourceLoader::resourceLoader()
 	{
-		ハンドル初期化();
+		handloeInitialize();
 	}
 
-	リソース_ローダー::~リソース_ローダー()
+	resourceLoader::~resourceLoader()
 	{
 	}
 
-	void リソース_ローダー::ハンドル初期化()
+	void resourceLoader::handloeInitialize()
 	{
 		for (int i = 0; i < 画像_枚数; i++) {
-			ハンドル配列_[i] = -1;
+			handleArray_[i] = -1;
 		}
 	}
 
-	int リソース_ローダー::初期化()
+	int resourceLoader::Initialize()
 	{
 		for (int i = 0; i < 画像_枚数; i++) {
-			ハンドル配列_[i] = LoadGraph(画像パス_[i]);
-			if (ハンドル配列_[i] == -1) return -1;
+			handleArray_[i] = LoadGraph(imgPass_[i]);
+			if (handleArray_[i] == -1) return -1;
 		}
 
 		return 0;
 	}
 
-	int リソース_ローダー::片付け()
+	int resourceLoader::Cleanup()
 	{
 		// この後描画を呼ばれても変なメモリを使われないようにする
-		ハンドル初期化();
+		handloeInitialize();
 
 		// 読みこんだグラフィックデータをすべて削除
 		int ret = InitGraph();
@@ -196,72 +196,72 @@ namespace エンジン
 	}
 
 
-	/// レンダリングサービス
+	/// renderingServices
 
-	レンダリングサービス::レンダリングサービス()
+	renderingServices::renderingServices()
 	{
-		ローダー = new リソース_ローダー();
+		loader = new resourceLoader();
 	}
 
-	レンダリングサービス::~レンダリングサービス()
+	renderingServices::~renderingServices()
 	{
-		安全DELETE(ローダー);
+		安全DELETE(loader);
 	}
 
-	int レンダリングサービス::初期化()
+	int renderingServices::Initialize()
 	{
-		int 返り値 = 0;
+		int returnValue = 0;
 
-		返り値 = ローダー->初期化();
-		if (返り値 != 0) return 返り値;
+		returnValue = loader->Initialize();
+		if (returnValue != 0) return returnValue;
 
 		// 情報の取得
-		RECT 矩形;
-		GetClientRect(GetMainWindowHandle(), &矩形);
-		情報_.画面サイズ[0] = 矩形.right;
-		情報_.画面サイズ[1] = 矩形.bottom;
+		RECT shortForm;
+		GetClientRect(GetMainWindowHandle(), &shortForm);
+		infomation_.screenSize[0] = shortForm.right;
+		infomation_.screenSize[1] = shortForm.bottom;
 
-		return 返り値;
+		return returnValue;
 	}
 
-	int レンダリングサービス::片付け()
+	int renderingServices::Cleanup()
 	{
-		int 返り値 = 0;
+		int returnValue = 0;
 
-		返り値 = ローダー->片付け();
-		if (返り値 != 0) return 返り値;
+		returnValue = loader->Cleanup();
+		if (returnValue != 0) return returnValue;
 
 		return 0;
 	}
 
-	int レンダリングサービス::サイズ取得(unsigned int リソースID, int(&出力先)[2]) const
+	int renderingServices::GetSize(unsigned int resourceID, int(&output)[2]) const
 	{
-		if (RID_個数 <= リソースID) return -1; // 範囲外確認
+		if (RID_個数 <= resourceID) return -1; // 範囲外確認
 		
-		const UVテーブル& uv = ローダー->UVテーブル(リソースID);
-		出力先[0] = uv.w;
-		出力先[1] = uv.h;
+		const UVtable& uv = loader->UVtable(resourceID);
+		output[0] = uv.w;
+		output[1] = uv.h;
 
 		return 0;
 	}
 
 
-	void レンダリングサービス::描画_左上(unsigned int リソースID, int x, int y)
+	void renderingServices::DrawUpperLeft(unsigned int resourceID, int x, int y)
 	{
-		const UVテーブル& uv = リソース_ローダー::UVテーブル(リソースID);
+		const UVtable& uv = resourceLoader::UVtable(resourceID);
 
 		//描画(x,y, u,v, w,h, handle,半透明,反転)
 		DrawRectGraph(x, y, uv.u, uv.v, uv.w, uv.h,
-			ローダー->ハンドル所得(uv.画像), TRUE, FALSE);
+			loader->GetHandle(uv.img), TRUE, FALSE);
 	}
 
-	void レンダリングサービス::描画(unsigned int リソースID, int x, int y)
+	void renderingServices::Draw(unsigned int resourceID, int x, int y)
 	{
-		const UVテーブル& uv = リソース_ローダー::UVテーブル(リソースID);
+		const UVtable& uv = resourceLoader::UVtable(resourceID);
 
 		//描画(x,y, u,v, w,h, handle,半透明,反転)
 		DrawRectGraph(x - uv.w / 2, y - uv.h / 2, uv.u, uv.v, uv.w, uv.h,
-			ローダー->ハンドル所得(uv.画像), TRUE, FALSE);
+			loader->GetHandle(uv.img), TRUE, FALSE);
 	}
 
 }

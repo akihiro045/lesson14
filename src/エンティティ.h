@@ -7,41 +7,41 @@
 #include "サービス・入力.h"
 #include "サービス・弾丸.h"
 
-namespace エンジン 
+namespace engine
 {
 	// 前方宣言
-	class エンティティ;
-	class コンポーネント;
-	class エンティティサービス;
-	class レンダリングサービス;
-	class 入力サービス;
-	struct 入力データ;
-	class 弾丸サービス;
+	class entity;
+	class component;
+	class EntityService;
+	class renderingServices;
+	class inputService;
+	struct inputData;
+	class bulletService;
 
 	/////////////////////////////////////////////////////
-	// コンポーネントから使うシステムサービスの集約
+	// コンポーネントから使うsystemServiceの集約
 	/////////////////////////////////////////////////////
-	class システムサービス
+	class systemService
 	{
 	private:
-		エンティティサービス& エンティティサービス_;
-		レンダリングサービス& レンダリングサービス_;
-		入力サービス& 入力_;
-		弾丸サービス& 弾丸_;
+		EntityService& EntityService_;
+		renderingServices& renderingServices_;
+		inputService& input_;
+		bulletService& bullet_;
 
 	public:
-		システムサービス(エンティティサービス& エンティティサービス, レンダリングサービス& レンダラー, 入力サービス& 入力, 弾丸サービス& 弾丸):
-			エンティティサービス_(エンティティサービス),
-			レンダリングサービス_(レンダラー), 
-			入力_(入力), 
-			弾丸_(弾丸){}
-		~システムサービス() {}
+		systemService(EntityService& EntityService, renderingServices& レンダラー, inputService& input, bulletService& bullet) :
+			EntityService_(EntityService),
+			renderingServices_(レンダラー),
+			input_(input),
+			bullet_(bullet) {}
+		~systemService() {}
 
 		// エンティティから呼び出し
-		エンティティサービス& エンティティ取得() { return エンティティサービス_; }
-		レンダリングサービス& レンダラー取得() { return レンダリングサービス_; }
-		入力サービス& 入力取得() { return 入力_; }
-		弾丸サービス& 弾丸取得() { return 弾丸_; }
+		EntityService& getEntity() { return EntityService_; }
+		renderingServices& getRenderer() { return renderingServices_; }
+		inputService& getInput() { return input_; }
+		bulletService& getBullet() { return bullet_; }
 	};
 
 
@@ -53,76 +53,76 @@ namespace エンジン
 	// + コンポーネント::キャスト可能？ の中身
 	// + コンポーネント::コンポーネント生成 の中身
 
-	class コンポーネント 
+	class component
 	{
 	public:// friend 宣言
-		friend エンティティサービス;
+		friend EntityService;
 
 	private:
-		TCHAR *名前_= L"コンポーネント";
+		TCHAR* name_ = L"コンポーネント";
 	protected:
-		static システムサービス* システムサービス_;
-		エンティティ& 親_;
+		static systemService* systemService_;
+		entity& parent_;
 
 	public:
-		コンポーネント(エンティティ& 親);
-		virtual ~コンポーネント();
+		component(entity& parent);
+		virtual ~component();
 
-		static bool キャスト可能？(const コンポーネント *インスタンス, const TCHAR* 名前);
+		static bool castPossible(const component* インスタンス, const TCHAR* name);
 
-		static const std::type_info& 型情報取得(const TCHAR* 名前);
-		TCHAR* 名前取得() { return 名前_; }
-		virtual void 更新(float 経過時間) = 0;
+		static const std::type_info& getTypeInfo(const TCHAR* name);
+		TCHAR* getName() { return name_; }
+		virtual void Update(float elapsedTime) = 0;
 
 	public:// 静的関数
-		static コンポーネント* コンポーネント生成(const TCHAR* 名前, エンティティ& 親);
+		static component* componentGeneration(const TCHAR* name, entity& parent);
 	};
 
 
-	class スプライトコンポーネント final : public コンポーネント
+	class spriteComponent final : public component
 	{
 	private:
-		TCHAR* 名前_ = L"スプライトコンポーネント";
+		TCHAR* name_ = L"スプライトコンポーネント";
 
-		int リソースID_ = RID_EXPLOSION_L;		// スプライトの指定
-		bool 位置は中心？_ = true;
+		int resourceID_ = RID_EXPLOSION_L;		// スプライトの指定
+		bool isThePositionCenter_ = true;
 	public:
-		スプライトコンポーネント(エンティティ& 親) :コンポーネント(親) {}
-		~スプライトコンポーネント() {}
+		spriteComponent(entity& parent) :component(parent) {}
+		~spriteComponent() {}
 
-		void リソース設定(int リソースID) { リソースID_ = リソースID; }
-		void 更新(float 経過時間) {};
-		void 描画();
+		void resourceConf(int resourceID) { resourceID_ = resourceID; }
+		void Update(float elapsedTime) {};
+		void Draw();
 	};
 
-	class 入力コンポーネント final : public コンポーネント
+	class inputComponent final : public component
 	{
 	private:
-		TCHAR* 名前_ = L"入力コンポーネント";
-		入力サービス &入力_;
+		TCHAR* name_ = L"入力コンポーネント";
+		inputService& input_;
 	public:
-		入力コンポーネント(エンティティ& 親) : コンポーネント(親)
-			, 入力_(システムサービス_->入力取得()){}
-		~入力コンポーネント(){}
+		inputComponent(entity& parent) : component(parent)
+			, input_(systemService_->getInput()) {}
+		~inputComponent() {}
 
-		const 入力データ &データ取得() { return 入力_.データ取得(); };
+		const inputData& GetData() { return input_.GetData(); };
 
-		void 更新(float 経過時間) {};
+		void Update(float elapsedTime) {};
 	};
 
-	class 弾丸コンポーネント final : public コンポーネント
+	class bulletComponent final : public component
 	{
 	private:
-		TCHAR* 名前_ = L"弾丸コンポーネント";
-		弾丸サービス& 弾丸_;
+		TCHAR* name_ = L"弾丸コンポーネント";
+		bulletService& bullet_;
 	public:
-		弾丸コンポーネント(エンティティ& 親) : コンポーネント(親)
-			, 弾丸_(システムサービス_->弾丸取得()) {}
-		~弾丸コンポーネント() {}
+		bulletComponent(entity& parent) : component(parent)
+			, bullet_(systemService_->getBullet()) {}
+		~bulletComponent() {}
 
-		int 追加(弾丸サービス::種類 種類, float2 位置, float2 速度) { return 弾丸_.追加(種類, 位置, 速度); }
+		int Add(bulletService::type type, float2 position, float2 speed) { return bullet_.Add(type, position, speed); }
 
-		void 更新(float 経過時間) {};
+		void Update(float elapsedTime) {};
 	};
 
 
@@ -134,33 +134,33 @@ namespace エンジン
 	// + エンティティ・システム::型情報取得
 	// + エンティティ・システム::追加
 
-	class エンティティ
+	class entity
 	{
 	public:// friend 宣言
-		friend エンティティサービス;
+		friend EntityService;
 
 	protected:
-		static システムサービス* システムサービス_;
+		static systemService* systemService_;
 
-		float2 位置_;
-		std::vector<コンポーネント*> コンポーネント配列_;
+		float2 position_;
+		std::vector<component*> componentArray_;
 
 	private:
-		void コンポーネントの全削除();
-		void 更新処理(float 経過時間);
+		void deleteAllComponents();
+		void UpdateProcess(float elapsedTime);
 
 	public:
-		エンティティ();
-		virtual ~エンティティ();
+		entity();
+		virtual ~entity();
 
-		void 追加(コンポーネント* コンポ) { コンポーネント配列_.push_back(コンポ); }
-		コンポーネント* コンポーネント検索(const TCHAR *名前);
+		void Add(component* コンポ) { componentArray_.push_back(コンポ); }
+		component* searchComponent(const TCHAR* name);
 
-		const float2& 位置取得() const {return 位置_;}
-		void 位置設定(float2 x) { 位置_ = x; }
+		const float2& getPosition() const { return position_; }
+		void positionSetting(float2 x) { position_ = x; }
 
-		virtual void 更新(float 経過時間) = 0; // 作らなきゃだめ
-		virtual void 描画() {};  // 作らなくていい
+		virtual void Update(float elapsedTime) = 0; // 作らなきゃだめ
+		virtual void Draw() {};  // 作らなくていい
 	};
 
 
@@ -168,50 +168,50 @@ namespace エンジン
 	// 具象エンティティ
 	/////////////////////////////////////////////////////
 
-	class プレイヤー・エンティティ final : public エンティティ
+	class playerEntity final : public entity
 	{
 	private:
-		スプライトコンポーネント* スプライト_;
-		入力コンポーネント* 入力_;
-		弾丸コンポーネント* 弾丸_;
+		spriteComponent* sprite_;
+		inputComponent* input_;
+		bulletComponent* bullet_;
 	public:
-		プレイヤー・エンティティ();
-		~プレイヤー・エンティティ();
+		playerEntity();
+		~playerEntity();
 
-		void 更新(float 経過時間) override;
-		void 描画() override;
+		void Update(float elapsedTime) override;
+		void Draw() override;
 	};
 
 
-	class ザコ１・エンティティ final : public エンティティ
+	class mob1Entity final : public entity
 	{
 	private:
-		スプライトコンポーネント* スプライト_;
-		float 生存時間_;
-		float 弾を撃つまでの時間_;
-		int 残弾_;
+		spriteComponent* sprite_;
+		float survivalTime_;
+		float shootTimeBullet_;
+		int ammo_;
 	public:
-		ザコ１・エンティティ();
-		~ザコ１・エンティティ() {}
+		mob1Entity();
+		~mob1Entity() {}
 
-		void 更新(float 経過時間) override;
-		void 描画() override;
+		void Update(float elapsedTime) override;
+		void Draw() override;
 	};
 
 
-	class ステージ１・エンティティ final : public エンティティ
+	class stage1Entity final : public entity
 	{
 	private:
-		int 状態_;
-		float 時間_;
-		float 状態での時間_;
+		int status_;
+		float time_;
+		float timeInStatus_;
 
-		void 状態を進める() { 状態_++;  状態での時間_ = 0.0f; }
+		void advanceStatus() { status_++;  timeInStatus_ = 0.0f; }
 	public:
-		ステージ１・エンティティ();
-		~ステージ１・エンティティ() {}
+		stage1Entity();
+		~stage1Entity() {}
 
-		void 更新(float 経過時間) override;
+		void Update(float elapsedTime) override;
 	};
 
 
@@ -219,35 +219,35 @@ namespace エンジン
 	// エンティティの管理
 	/////////////////////////////////////////////////////
 
-	class エンティティサービス
+	class EntityService
 	{
 	public:// 定数
-		enum class 種類 {
-			プレイヤー,
-			ザコ１,
-			ステージ１,
+		enum class type {
+			player,
+			mob1,
+			stage1,
 		};
 
 	private:
-		int エンティティID_ = 0;
-		std::unordered_map<int, エンティティ*> エンティティマップ_;
+		int entityID_ = 0;
+		std::unordered_map<int, entity*> entityMap_;
 
-		static const std::type_info& 型情報取得(種類 種類);
-		int 全削除();
+		static bool castPossible(entity* インスタンス, type type);
+		int allDelete();
 	public:
-		エンティティサービス();
-		~エンティティサービス();
+		EntityService();
+		~EntityService();
 
-		int 初期化(システムサービス *サービス);
-		int 片付け() { return 0; }
+		int Initialize(systemService* service);
+		int Cleanup() { return 0; }
 
-		int 追加(種類 種類);// ポインタを直接渡さずハンドル(int)を渡すことで、内部管理のコンテナの自由度を増す
-		エンティティ* エンティティ取得(int ハンドル);
-		エンティティ* 最初のエンティティ検索(種類 種類);
-		int 削除(int ハンドル);
+		int Add(type type);// ポインタを直接渡さずハンドル(int)を渡すことで、内部管理のコンテナの自由度を増す
+		entity* getEntity(int handle);
+		entity* searchOfFirstEntity(type type);
+		int Delete(int handle);
 
 
-		void 更新(float 経過時間);
-		void 描画();
+		void Update(float elapsedTime);
+		void Draw();
 	};
 }

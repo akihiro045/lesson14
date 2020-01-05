@@ -3,49 +3,49 @@
 #include "サービス・レンダリング.h"
 #include "DxLib.h"
 
-namespace エンジン
+namespace engine
 {
 	/// static メンバー
-	システムサービス* コンポーネント::システムサービス_ = nullptr;
-	システムサービス* エンティティ::システムサービス_ = nullptr;
+	systemService* component::systemService_ = nullptr;
+	systemService* entity::systemService_ = nullptr;
 
 	/////////////////////////////////////////////////////
 	/// コンポーネント
 	/////////////////////////////////////////////////////
 
-	コンポーネント::コンポーネント(エンティティ& 親):親_(親)
+	component::component(entity& parent) :parent_(parent)
 	{
 	}
 
-	コンポーネント::~コンポーネント()
+	component::~component()
 	{
 	}
-	
-	bool コンポーネント::キャスト可能？(const コンポーネント* インスタンス, const TCHAR* 名前)
+
+	bool component::castPossible(const component* インスタンス, const TCHAR* name)
 	{
-		if (_tcscmp(L"スプライトコンポーネント", 名前) == 0) { return nullptr != dynamic_cast<const スプライトコンポーネント*>(インスタンス); }
-		if (_tcscmp(L"入力コンポーネント", 名前) == 0) { return nullptr != dynamic_cast<const 入力コンポーネント*>(インスタンス); }
-		if (_tcscmp(L"弾丸コンポーネント", 名前) == 0) { return nullptr != dynamic_cast<const 弾丸コンポーネント*>(インスタンス); }
+		if (_tcscmp(L"スプライトコンポーネント", name) == 0) { return nullptr != dynamic_cast<const spriteComponent*>(インスタンス); }
+		if (_tcscmp(L"入力コンポーネント", name) == 0) { return nullptr != dynamic_cast<const inputComponent*>(インスタンス); }
+		if (_tcscmp(L"弾丸コンポーネント", name) == 0) { return nullptr != dynamic_cast<const bulletComponent*>(インスタンス); }
 
 		return false;
 	}
 
-	コンポーネント* コンポーネント::コンポーネント生成(const TCHAR* 名前, エンティティ& 親)
+	component* component::componentGeneration(const TCHAR* name, entity& parent)
 	{
-		struct 文字列分岐 { TCHAR* 文字列; コンポーネント* (*関数)(エンティティ& 親); };
+		struct 文字列分岐 { TCHAR* 文字列; component* (*function)(entity& parent); };
 
 		static 文字列分岐 対応表[] =
 		{
 			// 具象クラスのコンポーネントが追加されたらここにデータを追加
-			{ L"スプライトコンポーネント",   [](エンティティ& 親) { return (コンポーネント*)(new スプライトコンポーネント(親)); } },
-			{ L"入力コンポーネント",         [](エンティティ& 親) { return (コンポーネント*)(new 入力コンポーネント(親)); } },
-			{ L"弾丸コンポーネント",         [](エンティティ& 親) { return (コンポーネント*)(new 弾丸コンポーネント(親)); } },
+			{ L"スプライトコンポーネント",   [](entity & parent) { return (component*)(new spriteComponent(parent)); } },
+			{ L"入力コンポーネント",         [](entity & parent) { return (component*)(new inputComponent(parent)); } },
+			{ L"弾丸コンポーネント",         [](entity & parent) { return (component*)(new bulletComponent(parent)); } },
 		};
 
-		for(const auto &c : 対応表)
+		for (const auto& c : 対応表)
 		{
-			int diff = _tcscmp(c.文字列, 名前);
-			if(diff == 0) {return (*c.関数)(親);}
+			int diff = _tcscmp(c.文字列, name);
+			if (diff == 0) { return (*c.function)(parent); }
 		}
 
 		return nullptr;
@@ -56,44 +56,44 @@ namespace エンジン
 	// エンティティ
 	/////////////////////////////////////////////////////
 
-	エンティティ::エンティティ()
+	entity::entity()
 	{
-		位置_.x = 位置_.y = 0.0f;
+		position_.x = position_.y = 0.0f;
 	}
 
-	エンティティ::~エンティティ()
+	entity::~entity()
 	{
-		コンポーネントの全削除();
+		deleteAllComponents();
 	}
 
-	コンポーネント* エンティティ::コンポーネント検索(const TCHAR* 名前)
+	component* entity::searchComponent(const TCHAR* name)
 	{
-		for (auto& コンポーネント : コンポーネント配列_) {
-			if(コンポーネント::キャスト可能？(コンポーネント, 名前)) return コンポーネント;
+		for (auto& component : componentArray_) {
+			if (component::castPossible(component, name)) return component;
 		}
 
 		return nullptr;
 	}
 
 
-	void エンティティ::コンポーネントの全削除()
+	void entity::deleteAllComponents()
 	{
-		auto コンポーネント = コンポーネント配列_.begin();
-		while (コンポーネント != コンポーネント配列_.end()) {
-			安全DELETE(*コンポーネント);
-			コンポーネント = コンポーネント配列_.erase(コンポーネント);
+		auto component = componentArray_.begin();
+		while (component != componentArray_.end()) {
+			安全DELETE(*component);
+			component = componentArray_.erase(component);
 		}
 	}
 
-	void エンティティ::更新処理(float 経過時間)
+	void entity::UpdateProcess(float elapsedTime)
 	{
 		// コンポーネントを最初に処理
-		for (auto& コンポーネント : コンポーネント配列_) {
-			コンポーネント->更新(経過時間);
+		for (auto& component : componentArray_) {
+			component->Update(elapsedTime);
 		}
 
 		// コンポーネントの後に自分の更新の処理
-		更新(経過時間);
+		Update(elapsedTime);
 	}
 
 
@@ -101,118 +101,119 @@ namespace エンジン
 	// エンティティ・システム
 	/////////////////////////////////////////////////////
 
-	エンティティサービス::エンティティサービス()
+	EntityService::EntityService()
 	{
 	}
 
-	エンティティサービス::~エンティティサービス()
+	EntityService::~EntityService()
 	{
-		全削除();
+		allDelete();
 	}
 
-	int エンティティサービス::初期化(システムサービス *サービス)
+	int EntityService::Initialize(systemService* service)
 	{
-		コンポーネント::システムサービス_ = サービス;
-		エンティティ::システムサービス_ = サービス;
+		component::systemService_ = service;
+		entity::systemService_ = service;
 
 		return 0;
 	}
 
 
-	const std::type_info& エンティティサービス::型情報取得(種類 種類)
+	bool EntityService::castPossible(entity* インスタンス, type type)
 	{
-		switch (種類) {
-		case 種類::プレイヤー: return typeid(プレイヤー・エンティティ);
-		case 種類::ステージ１: return typeid(ステージ１・エンティティ);
-		case 種類::ザコ１:     return typeid(ザコ１・エンティティ);
-		default:return typeid(int);
+		switch (type) {
+		case type::player: return nullptr != dynamic_cast<const playerEntity*>(インスタンス);
+		case type::stage1: return nullptr != dynamic_cast<const stage1Entity*>(インスタンス);
+		case type::mob1:     return nullptr != dynamic_cast<const mob1Entity*>(インスタンス);
+		default:return false; // おかしな種類が指定された
 		}
+		return false;
 	}
 
-	int エンティティサービス::追加(種類 種類)
+	int EntityService::Add(type type)
 	{
-		エンティティ* p = nullptr;
+		entity* p = nullptr;
 
-		switch (種類) {
-		case 種類::プレイヤー:
-			p = new プレイヤー・エンティティ();
+		switch (type) {
+		case type::player:
+			p = new playerEntity();
 			break;
-		case 種類::ステージ１:
-			p = new ステージ１・エンティティ();
+		case type::stage1:
+			p = new stage1Entity();
 			break;
-		case 種類::ザコ１:
-			p = new ザコ１・エンティティ();
+		case type::mob1:
+			p = new mob1Entity();
 			break;
 		default:
 			return -1; // おかしな種類が指定された
 		}
 
-		エンティティマップ_[エンティティID_++] = p;
+		entityMap_[entityID_++] = p;
 
-		return エンティティID_ - 1;
+		return entityID_ - 1;
 	}
 
-	エンティティ* エンティティサービス::エンティティ取得(int ハンドル)
+	entity* EntityService::getEntity(int handle)
 	{
 #ifdef _DEBUG
 		// 存在確認
-		auto itr = エンティティマップ_.find(ハンドル);
-		if (itr == エンティティマップ_.end()) return nullptr;// 登録されていない
+		auto itr = entityMap_.find(handle);
+		if (itr == entityMap_.end()) return nullptr;// 登録されていない
 #endif // _DEBUG
 
-		return エンティティマップ_[ハンドル];
+		return entityMap_[handle];
 	}
 
-	エンティティ* エンティティサービス::最初のエンティティ検索(種類 種類)
-	{
-		const std::type_info& 型情報 = エンティティサービス::型情報取得(種類);
 
-		auto it = エンティティマップ_.begin();
-		while (it != エンティティマップ_.end()) {
-			if (typeid(*it->second) == 型情報) {
+	entity* EntityService::searchOfFirstEntity(type type)
+	{
+		auto it = entityMap_.begin();
+		while (it != entityMap_.end()) {
+			if (castPossible(it->second, type)) {
 				return it->second;
 			}
+			it++;
 		}
 
 		return nullptr;
 	}
 
 
-	int エンティティサービス::全削除()
+	int EntityService::allDelete()
 	{
-		auto it = エンティティマップ_.begin();
-		while (it != エンティティマップ_.end()) {
+		auto it = entityMap_.begin();
+		while (it != entityMap_.end()) {
 			安全DELETE(it->second);
-			エンティティマップ_.erase(it++);
+			entityMap_.erase(it++);
 		}
 
 		return 0;
 	}
 
-	int エンティティサービス::削除(int ハンドル)
+	int EntityService::Delete(int handle)
 	{
-		auto itr = エンティティマップ_.find(ハンドル);
-		if (itr == エンティティマップ_.end()) return -1;// 既に登録されていない
+		auto itr = entityMap_.find(handle);
+		if (itr == entityMap_.end()) return -1;// 既に登録されていない
 
-		delete エンティティマップ_[ハンドル];
-		エンティティマップ_.erase(ハンドル);
+		delete entityMap_[handle];
+		entityMap_.erase(handle);
 
 		return 0;
 	}
 
-	void エンティティサービス::更新(float 経過時間)
+	void EntityService::Update(float elapsedTime)
 	{
-		for (auto it = エンティティマップ_.begin(); it != エンティティマップ_.end(); it++)
+		for (auto it = entityMap_.begin(); it != entityMap_.end(); it++)
 		{
-			it->second->更新処理(経過時間);
+			it->second->UpdateProcess(elapsedTime);
 		}
 	}
 
-	void エンティティサービス::描画()
+	void EntityService::Draw()
 	{
-		for (auto it = エンティティマップ_.begin();it != エンティティマップ_.end(); it++)
+		for (auto it = entityMap_.begin(); it != entityMap_.end(); it++)
 		{
-			it->second->描画();
+			it->second->Draw();
 		}
 	}
 }

@@ -2,158 +2,158 @@
 #include "サービス・レンダリング.h"
 #include "DxLib.h"
 
-namespace エンジン {
+namespace engine {
 
 	/////////////////////////////////////////////////////
 	// 弾丸
 	/////////////////////////////////////////////////////
 
-	void 弾丸::初期化(unsigned int 最大数, unsigned int リソースID, レンダリングサービス& レンダリングサービス)
+	void bullet::Initialize(unsigned int maximum, unsigned int resourceID, renderingServices& renderingServices)
 	{
-		リソースID_ = リソースID;
+		resourceID_ = resourceID;
 
-		int 大きさ[2];
-		レンダリングサービス.サイズ取得(リソースID_, 大きさ);
-		半サイズ_.x = static_cast<float>(大きさ[0] >> 1);
-		半サイズ_.y = static_cast<float>(大きさ[1] >> 1);
+		int size[2];
+		renderingServices.GetSize(resourceID_, size);
+		halfSize_.x = static_cast<float>(size[0] >> 1);
+		halfSize_.y = static_cast<float>(size[1] >> 1);
 
-		最大数_ = 最大数;
-		データ配列_ = new 弾丸データ[最大数];
+		maximum_ = maximum;
+		dataArray_ = new bulletData[maximum];
 
-		リセット();
+		Reset();
 	}
-	void 弾丸::片付け()
+	void bullet::Cleanup()
 	{
-		安全DELETE_ARRAY(データ配列_);
-		最大数_ = 0;
+		安全DELETE_ARRAY(dataArray_);
+		maximum_ = 0;
 
-		リセット();
+		Reset();
 	}
-	void 弾丸::リセット()
+	void bullet::Reset()
 	{
-		個数_ = 0;
+		bulletNum_ = 0;
 	}
 
-	int 弾丸::追加(float2 位置, float2 速度)
+	int bullet::Add(float2 position, float2 speed)
 	{
-		if (最大数_ <= 個数_) return -1; // プールが余っていない
+		if (maximum_ <= bulletNum_) return -1; // プールが余っていない
 
-		弾丸データ &データ = データ配列_[個数_++];
-		データ.位置 = 位置;
-		データ.速度 = 速度;
-		データ.死んだ = false;
+		bulletData &data = dataArray_[bulletNum_++];
+		data.position = position;
+		data.speed = speed;
+		data.death = false;
 
 		return 0;
 	}
 
-	bool 弾丸::画面外？(float2 位置, float2 サイズ, float2 画面サイズ) {
+	bool bullet::offScreen(float2 position, float2 サイズ, float2 screenSize) {
 		return
-			位置.x < -サイズ.x ||
-			位置.y < -サイズ.y ||
-			画面サイズ.x + サイズ.x < 位置.x ||
-			画面サイズ.y + サイズ.y < 位置.y;
+			position.x < -サイズ.x ||
+			position.y < -サイズ.y ||
+			screenSize.x + サイズ.x < position.x ||
+			screenSize.y + サイズ.y < position.y;
 	}
 
-	void 弾丸::更新(float 経過時間, レンダリングサービス& レンダリングサービス)
+	void bullet::Update(float elapsedTime, renderingServices& renderingServices)
 	{
-		const レンダリングサービス::情報& 画面情報 = レンダリングサービス.情報取得();
+		const renderingServices::infomation& screenInfo = renderingServices.getInfo();
 
-		float2 画面サイズ(画面情報.画面サイズ[0], 画面情報.画面サイズ[1]);
+		float2 screenSize(screenInfo.screenSize[0], screenInfo.screenSize[1]);
 
-		for (int i = 0; i < 個数_; i++) {
-			弾丸データ& r = データ配列_[i];
+		for (int i = 0; i < bulletNum_; i++) {
+			bulletData& r = dataArray_[i];
 
 			// 移動
-			r.位置 += r.速度 * 経過時間;
+			r.position += r.speed * elapsedTime;
 
 			// カリング
-			if (画面外？(r.位置, 半サイズ_, 画面サイズ)) {
-				r.死んだ = true;
+			if (offScreen(r.position, halfSize_, screenSize)) {
+				r.death = true;
 			}
 		}
 	}
 
-	void 弾丸::更新後処理()
+	void bullet::PostUpdateProcexxing()
 	{
 		// 死んだ子に対して、後ろからデータをコピーしてくる
 		// (コピーが起きるので重いが、リスト管理だとキャッシュに載りにくくなるので、
 		// あえてデータを丸ごとコピー)
-		for (int i = 0; i < 個数_; i++) 
+		for (int i = 0; i < bulletNum_; i++) 
 		{
-			弾丸データ& r = データ配列_[i];
-			if (!r.死んだ) continue;// 死んでないなら対象外
+			bulletData& r = dataArray_[i];
+			if (!r.death) continue;// 死んでないなら対象外
 
-			弾丸データ* 入れ替え対象;
+			bulletData* replacementTarget;
 			do {
-				入れ替え対象 = &データ配列_[--個数_];// 後ろから持ってくる
-			}while(入れ替え対象->死んだ && 0 < 個数_);// 生きてる最初の物を探す
-			if (i < 個数_) {// 個数が追いつく場合は入れ替えられるものがなかったという意味
-				r = *入れ替え対象;
-				r.死んだ = false;// この処理の後には、動いている物の死んだフラグは全て落ちている
+				replacementTarget = &dataArray_[--bulletNum_];// 後ろから持ってくる
+			}while(replacementTarget->death && 0 < bulletNum_);// 生きてる最初の物を探す
+			if (i < bulletNum_) {// 個数が追いつく場合は入れ替えられるものがなかったという意味
+				r = *replacementTarget;
+				r.death = false;// この処理の後には、動いている物の死んだフラグは全て落ちている
 			}
 		}
 	}
 
-	void 弾丸::描画(レンダリングサービス& レンダリングサービス)
+	void bullet::Draw(renderingServices& renderingServices)
 	{
-		for (int i = 0; i < 個数_; i++) {
-			弾丸データ& r = データ配列_[i];
-			レンダリングサービス.描画(リソースID_, 
-				static_cast<int>(r.位置.x + 0.5f), 
-				static_cast<int>(r.位置.y + 0.5f));
+		for (int i = 0; i < bulletNum_; i++) {
+			bulletData& r = dataArray_[i];
+			renderingServices.Draw(resourceID_, 
+				static_cast<int>(r.position.x + 0.5f), 
+				static_cast<int>(r.position.y + 0.5f));
 		}
 	}
 
 	/////////////////////////////////////////////////////
-	// 弾丸サービス
+	// bulletService
 	/////////////////////////////////////////////////////
 
 
-	弾丸サービス::弾丸サービス(レンダリングサービス& レンダリングサービス)
-		: レンダリングサービス_(レンダリングサービス)
+	bulletService::bulletService(renderingServices& renderingServices)
+		: renderingServices_(renderingServices)
 	{
-		弾丸_[種類::自弾].初期化(3, RID_SHOT, レンダリングサービス);
-		弾丸_[種類::敵弾].初期化(1024, RID_BULLET_ANIM, レンダリングサービス);
+		bullet_[type::myBullet].Initialize(3, RID_SHOT, renderingServices);
+		bullet_[type::enemyBullet].Initialize(1024, RID_BULLET_ANIM, renderingServices);
 
 	}
 
-	弾丸サービス::~弾丸サービス()
+	bulletService::~bulletService()
 	{
-		for (auto& 弾丸 : 弾丸_) {
-			弾丸.片付け();
+		for (auto& bullet : bullet_) {
+			bullet.Cleanup();
 		}
 	}
 
-	int 弾丸サービス::追加(弾丸サービス::種類 種類, float2 位置, float2 速度)
+	int bulletService::Add(bulletService::type type, float2 position, float2 speed)
 	{
-		switch (種類) {
-		case 種類::自弾:
-			速度 = float2(0.0f, -500.f);
+		switch (type) {
+		case type::myBullet:
+			speed = float2(0.0f, -500.f);
 			break;
-		case 種類::敵弾:
+		case type::enemyBullet:
 			break;
 		default:
 			return -1;// おかしな引数が来た
 			break;
 		}
 
-		弾丸_[種類].追加(位置, 速度);
+		bullet_[type].Add(position, speed);
 
 		return 0;
 	}
 
-	void 弾丸サービス::更新(float 経過時間)
+	void bulletService::Update(float elapsedTime)
 	{
-		for (auto& 弾丸 : 弾丸_) {
-			弾丸.更新(経過時間, レンダリングサービス_);
+		for (auto& bullet : bullet_) {
+			bullet.Update(elapsedTime, renderingServices_);
 		}
 	}
 
-	void 弾丸サービス::描画()
+	void bulletService::Draw()
 	{
-		for (auto& 弾丸 : 弾丸_) {
-			弾丸.更新後処理();// 消えた弾のメモリをきれいにしてから描画
-			弾丸.描画(レンダリングサービス_);
+		for (auto& bullet : bullet_) {
+			bullet.PostUpdateProcexxing();// 消えた弾のメモリをきれいにしてから描画
+			bullet.Draw(renderingServices_);
 		}
 	}
-}// namespace エンジン
+}// namespace engine

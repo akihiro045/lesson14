@@ -1,16 +1,16 @@
 ﻿#pragma once
 
-namespace エンジン {
+namespace engine {
 
-	struct 入力データ{
-		unsigned char 生 = 0;
-		unsigned char 押し下げ = 0;
-		unsigned char 引き上げ = 0;
+	struct inputData{
+		unsigned char now = 0;
+		unsigned char pushDown = 0;
+		unsigned char pullUp = 0;
 	};
 
-	class 入力サービス {
+	class inputService {
 	public:// 定数宣言
-		enum 種類 {
+		enum type {
 			スタート = 0,
 			キャンセル,
 			ショット,
@@ -21,25 +21,25 @@ namespace エンジン {
 			右,
 		};
 
-		static constexpr unsigned int マスク_スタート	= (1 << スタート);
-		static constexpr unsigned int マスク_キャンセル = (1 << キャンセル);
-		static constexpr unsigned int マスク_ショット	= (1 << ショット);
-		static constexpr unsigned int マスク_スペシャル = (1 << スペシャル);
-		static constexpr unsigned int マスク_上			= (1 << 上);
-		static constexpr unsigned int マスク_下			= (1 << 下);
-		static constexpr unsigned int マスク_左			= (1 << 左);
-		static constexpr unsigned int マスク_右			= (1 << 右);
+		static constexpr unsigned int startMask	= (1 << スタート);
+		static constexpr unsigned int cancelMask = (1 << キャンセル);
+		static constexpr unsigned int shootMask	= (1 << ショット);
+		static constexpr unsigned int specialMask = (1 << スペシャル);
+		static constexpr unsigned int upMask			= (1 << 上);
+		static constexpr unsigned int downMask			= (1 << 下);
+		static constexpr unsigned int leftMask			= (1 << 左);
+		static constexpr unsigned int rightMask			= (1 << 右);
 
 	private:
-		unsigned char 前フレーム_ = 0;
-		入力データ 入力データ_;
+		unsigned char oldFrame_ = 0;
+		inputData inputData_;
 	public:
-		入力サービス() {}
-		~入力サービス() {}
+		inputService() {}
+		~inputService() {}
 
-		void 更新();
+		void Update();
 
-		inline const 入力データ &データ取得() { return 入力データ_; }
+		inline const inputData &GetData() { return inputData_; }
 	};
 
-}// namespace エンジン
+}// namespace engine

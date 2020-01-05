@@ -5,92 +5,94 @@
 #include "サービス・弾丸.h"
 #include "DxLib.h"
 
-using namespace エンジン;
+using namespace engine;
 
-ゲームエンジン::ゲームエンジン()
+gameEngine::gameEngine()
 {
-	エンティティサービス_ = new エンティティサービス();
-	レンダリングサービス_ = new レンダリングサービス();
-	入力サービス_ = new 入力サービス();
-	弾丸サービス_ = new 弾丸サービス(*レンダリングサービス_);
-	システムサービス_ = new システムサービス(*エンティティサービス_, *レンダリングサービス_, *入力サービス_, *弾丸サービス_);
+	EntityService_ = new EntityService();
+	renderingServices_ = new renderingServices();
+	inputService_ = new inputService();
+	bulletService_ = new bulletService(*renderingServices_);
+	systemService_ = new systemService(*EntityService_, *renderingServices_, *inputService_, *bulletService_);
 }
 
-ゲームエンジン::~ゲームエンジン()
+gameEngine::~gameEngine()
 {
-	安全DELETE(システムサービス_);
-	安全DELETE(弾丸サービス_);
-	安全DELETE(入力サービス_);
-	安全DELETE(レンダリングサービス_);
-	安全DELETE(エンティティサービス_);
+	安全DELETE(systemService_);
+	安全DELETE(bulletService_);
+	安全DELETE(inputService_);
+	安全DELETE(renderingServices_);
+	安全DELETE(EntityService_);
 }
 
-int ゲームエンジン::初期化()
+int gameEngine::Initialize()
 {
 	ChangeWindowMode(TRUE);//非全画面にセット
-	SetGraphMode(540, 960, 32);
+	SetGraphMode(540, 540, 32);
 	if (DxLib_Init() == -1) { return -1; }	// DXライブラリ初期化(エラーで終了)
 
-	レンダリングサービス_->初期化();
-	エンティティサービス_->初期化(システムサービス_);
+	renderingServices_->Initialize();
+	EntityService_->Initialize(systemService_);
 
-	//////// ゲームシステム的な初期化
-	エンティティサービス_->追加(エンティティサービス::種類::プレイヤー); // 自機追加
-	エンティティサービス_->追加(エンティティサービス::種類::ステージ１); // ステージ1の流れを追加
+	//////// ゲームシステム的なinitialize
+	EntityService_->Add(EntityService::type::player); // 自機追加
+	EntityService_->Add(EntityService::type::stage1); // ステージ1の流れを追加
 
 	return 0; 
 }
 
-int ゲームエンジン::片付け()
+int gameEngine::Cleanup()
 {
-	エンティティサービス_->片付け();
-	レンダリングサービス_->片付け();
+	EntityService_->Cleanup();
+	renderingServices_->Cleanup();
 
 	DxLib_End(); // DXライブラリの終了処理
 
 	return 0;
 }
 
-int ゲームエンジン::更新()
+int gameEngine::Update()
 {
-	int 終わり？ = 0;
+	int finish = 0;
 
 	// 時間更新処理
-	LONGLONG μ時間 = GetNowHiPerformanceCount();
-	LONGLONG 経過μ時間 = μ時間 - 前フレームのμ時刻_;
-	if (1000000 < 経過μ時間) 経過μ時間 = 1000000;// 一秒の上限を入れる
-	float 経過時間 =  0.000001f * static_cast<float>(経過μ時間);
-	前フレームのμ時刻_ = μ時間;
+	LONGLONG μtime = GetNowHiPerformanceCount();
+	LONGLONG elapsedμTime = μtime - μtimeOfOldFrame_;
+	if (1000000 < elapsedμTime) elapsedμTime = 1000000;// 一秒の上限を入れる
+	float elapsedTime =  0.000001f * static_cast<float>(elapsedμTime);
+	μtimeOfOldFrame_ = μtime;
 
 	// いろいろなオブジェクトの更新処理
-	入力サービス_->更新();
-	エンティティサービス_->更新(経過時間);
-	弾丸サービス_->更新(経過時間);
+	inputService_->Update();
+	EntityService_->Update(elapsedTime);
+	bulletService_->Update(elapsedTime);
 
 	// 描画
 	ClearDrawScreen();//裏画面消す
 	SetDrawScreen(DX_SCREEN_BACK);//描画先を裏画面に
-	エンティティサービス_->描画();
-	弾丸サービス_->描画();
+	EntityService_->Draw();
+	bulletService_->Draw();
 	ScreenFlip();//裏画面を表画面にコピー
 
-	return 終わり？;
+	if (CheckHitKey(KEY_INPUT_ESCAPE)) { finish++; }
+
+	return finish;
 }
 
-int ゲームエンジン::実行() 
+int gameEngine::Run() 
 {
-	int 返り値 = 0;
+	int returnValue = 0;
 
-	返り値 = 初期化();
-	if (返り値 != 0) return 返り値;
+	returnValue = Initialize();
+	if (returnValue != 0) return returnValue;
 
 	// メインループ
 	while (ProcessMessage() == 0)
 	{
-		if (更新() != 0) break;// 返り値の値で抜ける
+		if (Update() != 0) break;// 返り値の値で抜ける
 	}
 
-	返り値 = 片付け();
+	returnValue = Cleanup();
 
-	return 返り値;
+	return returnValue;
 }
