@@ -8,6 +8,8 @@ namespace engine {
 	// 弾丸
 	/////////////////////////////////////////////////////
 
+	
+
 	void bullet::Initialize(unsigned int maximum, unsigned int resourceID, renderingServices& renderingServices)
 	{
 		resourceID_ = resourceID;

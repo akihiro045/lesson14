@@ -8,6 +8,7 @@ namespace engine {
 	class inputService;
 	class bulletService;
 	class systemService;
+	class colisionService;
 }
 
 // クラス宣言
@@ -19,6 +20,7 @@ private:
 	engine::inputService* inputService_;
 	engine::bulletService* bulletService_;
 	engine::systemService* systemService_;
+	engine::colisionService* colisionService_;
 
 	LONGLONG μtimeOfOldFrame_ = 0;
 

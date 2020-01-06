@@ -14,6 +14,7 @@ gameEngine::gameEngine()
 	inputService_ = new inputService();
 	bulletService_ = new bulletService(*renderingServices_);
 	systemService_ = new systemService(*EntityService_, *renderingServices_, *inputService_, *bulletService_);
+	//colisionService_ = new colisionService();
 }
 
 gameEngine::~gameEngine()
@@ -67,6 +68,17 @@ int gameEngine::Update()
 	EntityService_->Update(elapsedTime);
 	bulletService_->Update(elapsedTime);
 
+	//当たり判定
+	for (int i = 0; i < bulletService_->myBullet; i++)
+	{
+		if (bulletService_->myBullet != NULL)
+		{
+			for (int j = 0; j < bulletService_->myBullet; j++)
+			{
+				
+			}
+		}
+	}
 	// 描画
 	ClearDrawScreen();//裏画面消す
 	SetDrawScreen(DX_SCREEN_BACK);//描画先を裏画面に

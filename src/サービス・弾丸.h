@@ -26,7 +26,7 @@ namespace engine {
 		bulletData* dataArray_ = nullptr;
 
 		static bool offScreen(float2 position, float2 サイズ, float2 screenSize);
-
+		bool flag;
 	public:
 		bullet() {}
 		~bullet() {}
@@ -40,6 +40,10 @@ namespace engine {
 		void Update(float elapsedTime, renderingServices& renderingServices);
 		void PostUpdateProcexxing();
 		void Draw(renderingServices& renderingServices);
+
+		//弾の生存フラグを取得
+		bool GetFlag() { return flag; }
+		void HItAction() { flag = false; }
 	};
 
 

@@ -44,6 +44,8 @@ namespace engine
 
 		bullet_ = dynamic_cast<bulletComponent*>(component::componentGeneration(L"弾丸コンポーネント", *this));
 		Add(bullet_);
+
+		range = 10;
 	}
 
 	playerEntity::~playerEntity()
@@ -77,6 +79,9 @@ namespace engine
 		if (input.pushDown & inputService::shootMask) {
 			bullet_->Add(bulletService::type::myBullet, this->position_, this->position_);// 速度にダミーで位置を入れた
 		}
+
+		//当たり判定の処理を書いたらここに挿入？
+
 	}
 
 	void playerEntity::Draw()
@@ -97,6 +102,8 @@ namespace engine
 		Add(sprite_);
 
 		Add(dynamic_cast<bulletComponent*>(component::componentGeneration(L"弾丸コンポーネント", *this)));
+
+		range = 10;
 	}
 
 	void mob1Entity::Update(float elapsedTime)

@@ -6,6 +6,7 @@
 #include "サービス・レンダリング.h"
 #include "サービス・入力.h"
 #include "サービス・弾丸.h"
+#include "サービス・当たり判定.h"
 
 namespace engine
 {
@@ -19,7 +20,7 @@ namespace engine
 	class bulletService;
 
 	/////////////////////////////////////////////////////
-	// コンポーネントから使うsystemServiceの集約
+	// コンポーネントから使うシステムサービスの集約
 	/////////////////////////////////////////////////////
 	class systemService
 	{
@@ -145,6 +146,11 @@ namespace engine
 		float2 position_;
 		std::vector<component*> componentArray_;
 
+		//当たり判定
+		float range;
+
+		//敵の生存フラグ（true = 生存）
+		bool flag;
 	private:
 		void deleteAllComponents();
 		void UpdateProcess(float elapsedTime);
@@ -158,9 +164,14 @@ namespace engine
 
 		const float2& getPosition() const { return position_; }
 		void positionSetting(float2 x) { position_ = x; }
-
+		float GetRange() { return range; }
+		//当たった時の処理
+		virtual void HitAction() {};
 		virtual void Update(float elapsedTime) = 0; // 作らなきゃだめ
 		virtual void Draw() {};  // 作らなくていい
+
+		//敵の生存フラグを取得
+		bool GetFlag() { return flag; }
 	};
 
 
